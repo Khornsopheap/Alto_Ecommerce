@@ -1,5 +1,6 @@
 import { Heart, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import Rating from "./Rating";
 import { formatPrice, cn } from "../lib/utils";
 
@@ -9,7 +10,11 @@ export default function ProductCard({ product, onAddToCart, onToggleWishlist, wi
     : null;
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-sm border border-line bg-stone-50 transition-shadow hover:shadow-card">
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="group relative flex flex-col overflow-hidden rounded-sm border border-line bg-stone-50 transition-shadow hover:shadow-card"
+    >
       <Link to={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-stone-200">
         <img
           src={product.image}
@@ -43,14 +48,15 @@ export default function ProductCard({ product, onAddToCart, onToggleWishlist, wi
             <span className="price text-sm text-ink-300 line-through">{formatPrice(product.originalPrice)}</span>
           )}
         </div>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.96 }}
           onClick={() => onAddToCart?.(product)}
           className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-sm bg-ink text-sm font-medium text-stone-50 transition-colors hover:bg-brass-600"
         >
           <ShoppingBag size={15} />
           Add to Cart
-        </button>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 }

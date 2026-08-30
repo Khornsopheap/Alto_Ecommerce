@@ -1,4 +1,5 @@
 import { DollarSign, ShoppingCart, Package, Users } from "lucide-react";
+import { motion } from "framer-motion";
 import PageHeader from "../../components/PageHeader";
 import StatusBadge from "../../components/StatusBadge";
 import { stats, orders, salesOverview } from "../../data/mockData";
@@ -19,14 +20,21 @@ export default function Dashboard() {
       <PageHeader eyebrow="Overview" title="Dashboard" description="Your store performance at a glance" />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {cards.map((c) => (
-          <div key={c.label} className="rounded-sm border border-line bg-stone-50 p-5">
+        {cards.map((c, i) => (
+          <motion.div
+            key={c.label}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+            whileHover={{ y: -2 }}
+            className="rounded-sm border border-line bg-stone-50 p-5 transition-shadow hover:shadow-card"
+          >
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{c.label}</p>
               <c.icon size={16} className="text-brass-500" />
             </div>
             <p className="price mt-2 text-2xl font-semibold text-ink">{c.value}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
 
@@ -34,13 +42,18 @@ export default function Dashboard() {
         <div className="rounded-sm border border-line bg-stone-50 p-6 lg:col-span-2">
           <h2 className="mb-6 font-display text-lg font-medium text-ink">Sales Overview</h2>
           <div className="flex h-48 items-end gap-3">
-            {salesOverview.map((s) => (
+            {salesOverview.map((s, i) => (
               <div key={s.month} className="flex flex-1 flex-col items-center gap-2">
-                <div
-                  className="w-full rounded-t-sm bg-brass-500 transition-all hover:bg-brass-600"
-                  style={{ height: `${(s.value / max) * 100}%` }}
-                  title={formatPrice(s.value)}
-                />
+                <div className="flex w-full flex-1 items-end">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${(s.value / max) * 100}%` }}
+                    transition={{ duration: 0.6, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ backgroundColor: "#96692A" }}
+                    className="w-full rounded-t-sm bg-brass-500"
+                    title={formatPrice(s.value)}
+                  />
+                </div>
                 <span className="text-xs text-ink-500">{s.month}</span>
               </div>
             ))}
