@@ -5,7 +5,9 @@ import PageHeader from "../components/PageHeader";
 import SearchBar from "../components/SearchBar";
 import ProductGrid from "../components/ProductGrid";
 import Button from "../components/Button";
-import { products, categories } from "../data/mockData";
+// import { products, categories } from "../data/mockData";
+import api from "../lib/api";
+import { categories } from "../data/mockData";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../components/Toast";
 
@@ -22,11 +24,24 @@ export default function Products() {
   const [sortBy, setSortBy] = useState("featured");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
+
+  // useEffect(() => {
+  //   const t = setTimeout(() => setLoading(false), 500);
+  //   return () => clearTimeout(t);
+  // }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
+    setLoading(true);
+    api
+      .get("/products")
+      .then((res) => {
+        setProducts(res.data);
+      })
+      .catch((err) => console.error("Failed to load products:", err))
+      .finally(() => setLoading(false));
   }, []);
+
 
   useEffect(() => {
     setPage(1);
