@@ -1,23 +1,32 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import Button from "../../components/Button";
 import Dialog from "../../components/Dialog";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Input from "../../components/Input";
-// import { categories as initialCategories } from "../../data/mockData";
+import api, { resolveImage } from "../../lib/api";
 import { useToast } from "../../components/Toast";
-import api from "../../lib/api";
 
 export default function AdminCategories() {
+  const [categories, setCategories] = useState([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const { showToast } = useToast();
-  const [categories, setCategories] = useState([]);
+
+  function loadCategories() {
+    api.get("/categories").then((res) => setCategories(res.data));
+  }
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   async function handleSave(e) {
-    e.preventDefault(); const formData = new FormData(e.target);
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
     try {
       if (editing) {
         formData.append("_method", "PUT");
@@ -38,15 +47,6 @@ export default function AdminCategories() {
     }
   }
 
-
-  function loadCategories() {
-    api.get("/categories").then((res) => setCategories(res.data));
-  }
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
   async function handleDelete() {
     try {
       await api.delete(`/categories/${deleting.id}`);
@@ -57,7 +57,6 @@ export default function AdminCategories() {
     }
     setDeleting(null);
   }
-
 
   return (
     <div>
@@ -75,15 +74,11 @@ export default function AdminCategories() {
       <div className="divide-y divide-line rounded-sm border border-line bg-stone-50">
         {categories.map((c) => (
           <div key={c.id} className="flex items-center gap-4 px-5 py-4">
-            <img src={c.image} alt="" className="h-12 w-12 rounded-sm object-cover" />
+            <img src={resolveImage(c.image)} alt="" className="h-12 w-12 rounded-sm object-cover" />
             <div className="flex-1">
               <p className="font-medium text-ink">{c.name}</p>
-              <p className="price text-xs text-ink-500">{c.count} products</p>
             </div>
-            <button
-              onClick={() => { setEditing(c); setFormOpen(true); }}
-              className="flex items-center gap-1 text-sm text-brass-600 hover:text-brass-700"
-            >
+            <button onClick={() => { setEditing(c); setFormOpen(true); }} className="flex items-center gap-1 text-sm text-brass-600 hover:text-brass-700">
               <Pencil size={14} /> Edit
             </button>
             <button onClick={() => setDeleting(c)} className="flex items-center gap-1 text-sm text-rust hover:text-rust/80">
@@ -96,7 +91,6 @@ export default function AdminCategories() {
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit Category" : "Add Category"}>
         <form onSubmit={handleSave} className="space-y-4">
           <Input id="name" name="name" label="Category Name" defaultValue={editing?.name} required />
-
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink-700">Category Image</label>
             <input
@@ -106,25 +100,19 @@ export default function AdminCategories() {
               className="w-full rounded-sm border border-dashed border-line py-3 text-sm text-ink-500 file:mr-3 file:rounded-sm file:border-0 file:bg-stone-200 file:px-3 file:py-1.5"
             />
           </div>
-
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="accent">
-              Save Category
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="accent">Save Category</Button>
           </div>
         </form>
       </Dialog>
-
 
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}
         onConfirm={handleDelete}
         title="Delete category?"
-        description={`"${deleting?.name}" will be removed. Products in this category will need to be reassigned.`}
+        description={`"${deleting?.name}" will be removed.`}
       />
     </div>
   );

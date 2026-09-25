@@ -23,4 +23,12 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+export const BACKEND_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000/api").replace(/\/api\/?$/, "");
+
+export function resolveImage(path) {
+  if (!path) return null;
+  return `${BACKEND_URL}${path}`;
+}
+
 export default api;

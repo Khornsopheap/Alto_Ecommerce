@@ -37,7 +37,7 @@ export default function ProductCard({ product, onAddToCart, onToggleWishlist, wi
       </button>
 
       <div className="flex flex-1 flex-col gap-1.5 p-4">
-        <p className="text-xs uppercase tracking-wide text-ink-300">{product.category}</p>
+        <p className="text-xs uppercase tracking-wide text-ink-300">{product.category?.name}</p>
         <Link to={`/products/${product.id}`} className="line-clamp-1 font-medium text-ink hover:text-brass-600">
           {product.name}
         </Link>

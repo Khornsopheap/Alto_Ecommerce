@@ -7,11 +7,9 @@ import Dialog from "../../components/Dialog";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Input from "../../components/Input";
 import EmptyState from "../../components/EmptyState";
-import { TableRowSkeleton } from "../../components/LoadingSkeleton";
-// import { products as initialProducts, categories } from "../../data/mockData";
+import api, { resolveImage } from "../../lib/api";
 import { formatPrice } from "../../lib/utils";
 import { useToast } from "../../components/Toast";
-import api from "../../lib/api";
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -22,6 +20,15 @@ export default function AdminProducts() {
   const [deleting, setDeleting] = useState(null);
   const { showToast } = useToast();
 
+  function loadProducts() {
+    api.get("/products").then((res) => setProducts(res.data));
+  }
+
+  useEffect(() => {
+    loadProducts();
+    api.get("/categories").then((res) => setCategories(res.data));
+  }, []);
+
   const filtered = products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
 
   function openAdd() {
@@ -29,22 +36,15 @@ export default function AdminProducts() {
     setFormOpen(true);
   }
 
-  function loadProduct() {
-    api.get("/products").then((res) => setProducts(res.data));
-  }
-
-  useEffect(() => {
-    loadProduct();
-    api.get("/categories").then((res) => setCategories(res.data));
-  })
-
   function openEdit(product) {
     setEditing(product);
     setFormOpen(true);
   }
 
   async function handleSave(e) {
-    e.preventDefault(); const formData = new FormData(e.target);
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
     try {
       if (editing) {
         formData.append("_method", "PUT");
@@ -65,10 +65,15 @@ export default function AdminProducts() {
     }
   }
 
-
-  function handleDelete() {
-    setProducts((prev) => prev.filter((p) => p.id !== deleting.id));
-    showToast("Product deleted");
+  async function handleDelete() {
+    try {
+      await api.delete(`/products/${deleting.id}`);
+      showToast("Product deleted");
+      loadProducts();
+    } catch (err) {
+      showToast("Failed to delete product.");
+    }
+    setDeleting(null);
   }
 
   return (
@@ -103,11 +108,11 @@ export default function AdminProducts() {
             {filtered.map((p) => (
               <tr key={p.id} className="border-b border-line last:border-0">
                 <td className="px-4 py-3">
-                  <img src={p.image} alt={p.name} className="h-10 w-10 rounded-sm object-cover" />
+                  <img src={resolveImage(p.image)} alt={p.name} className="h-10 w-10 rounded-sm object-cover" />
                 </td>
                 <td className="px-4 py-3">
                   <p className="font-medium text-ink">{p.name}</p>
-                  <p className="text-xs text-ink-300">{p.category}</p>
+                  <p className="text-xs text-ink-300">{p.category?.name}</p>
                 </td>
                 <td className="price px-4 py-3 text-ink">{formatPrice(p.price)}</td>
                 <td className="price px-4 py-3 text-ink-500">{p.stock}</td>
@@ -137,7 +142,12 @@ export default function AdminProducts() {
           <Input id="name" name="name" label="Product Name" defaultValue={editing?.name} required />
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink-700">Category</label>
-            <select name="category_id" defaultValue={editing?.category_id} className="h-11 w-full rounded-sm border border-line bg-stone-50 px-3.5 text-sm focus:border-brass-500 focus:outline-none focus:ring-1 focus:ring-brass-500">
+            <select
+              name="category_id"
+              defaultValue={editing?.category_id || ""}
+              className="h-11 w-full rounded-sm border border-line bg-stone-50 px-3.5 text-sm focus:border-brass-500 focus:outline-none focus:ring-1 focus:ring-brass-500"
+            >
+              <option value="" disabled>Select a category</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -164,15 +174,10 @@ export default function AdminProducts() {
               accept="image/*"
               className="w-full rounded-sm border border-dashed border-line py-3 text-sm text-ink-500 file:mr-3 file:rounded-sm file:border-0 file:bg-stone-200 file:px-3 file:py-1.5"
             />
-
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="accent">
-              Save Product
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="accent">Save Product</Button>
           </div>
         </form>
       </Dialog>

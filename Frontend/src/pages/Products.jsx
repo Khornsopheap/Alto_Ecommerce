@@ -6,7 +6,7 @@ import SearchBar from "../components/SearchBar";
 import ProductGrid from "../components/ProductGrid";
 import Button from "../components/Button";
 // import { products, categories } from "../data/mockData";
-import api from "../lib/api";
+import api, { resolveImage } from "../lib/api";
 // import { categories } from "../data/mockData";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../components/Toast";
@@ -32,20 +32,21 @@ export default function Products() {
   //   return () => clearTimeout(t);
   // }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    api
-      .get("/products")
-      .then((res) => {
-        setProducts(res.data);
-      })
-      .catch((err) => console.error("Failed to load products:", err))
-      .finally(() => setLoading(false));
-  }, []);
-  
+  // useEffect(() => {
+  //   setLoading(true);
+  //   api
+  //     .get("/products")
+  //     .then((res) => {
+  //       setProducts(res.data);
+  //     })
+  //     .catch((err) => console.error("Failed to load products:", err))
+  //     .finally(() => setLoading(false));
+  // }, []);
+
 
   useEffect(() => {
-    api.get('/categories').then((res) => setCategories(res.data));
+    api.get("/products").then((res) => setProducts(res.data));
+    api.get("/categories").then((res) => setCategories(res.data));
   }, []);
 
 
@@ -58,6 +59,7 @@ export default function Products() {
     if (category !== "all") {
       list = list.filter((p) => p.category_id === category);
     }
+
     if (query) {
       list = list.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
     }
@@ -102,10 +104,10 @@ export default function Products() {
           >
             <option value="all">All Categories</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
+              <option key={c.id} value={c.id}>{c.name}</option>
             ))}
+
+
           </select>
           <select
             value={priceRange}
