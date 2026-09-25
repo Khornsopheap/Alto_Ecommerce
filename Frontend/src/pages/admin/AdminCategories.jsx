@@ -1,37 +1,63 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import Button from "../../components/Button";
 import Dialog from "../../components/Dialog";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Input from "../../components/Input";
-import { categories as initialCategories } from "../../data/mockData";
+// import { categories as initialCategories } from "../../data/mockData";
 import { useToast } from "../../components/Toast";
+import api from "../../lib/api";
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState(initialCategories);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const { showToast } = useToast();
+  const [categories, setCategories] = useState([]);
 
-  function handleSave(e) {
-    e.preventDefault();
-    const name = new FormData(e.target).get("name");
-    if (editing) {
-      setCategories((prev) => prev.map((c) => (c.id === editing.id ? { ...c, name } : c)));
-      showToast("Category updated");
-    } else {
-      setCategories((prev) => [...prev, { id: `c${Date.now()}`, name, count: 0, image: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400&q=80" }]);
-      showToast("Category added");
+  async function handleSave(e) {
+    e.preventDefault(); const formData = new FormData(e.target);
+    try {
+      if (editing) {
+        formData.append("_method", "PUT");
+        await api.post(`/categories/${editing.id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        showToast("Category updated");
+      } else {
+        await api.post("/categories", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        showToast("Category added");
+      }
+      loadCategories();
+      setFormOpen(false);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Something went wrong.");
     }
-    setFormOpen(false);
   }
 
-  function handleDelete() {
-    setCategories((prev) => prev.filter((c) => c.id !== deleting.id));
-    showToast("Category deleted");
+
+  function loadCategories() {
+    api.get("/categories").then((res) => setCategories(res.data));
   }
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  async function handleDelete() {
+    try {
+      await api.delete(`/categories/${deleting.id}`);
+      showToast("Category deleted");
+      loadCategories();
+    } catch (err) {
+      showToast("Failed to delete category.");
+    }
+    setDeleting(null);
+  }
+
 
   return (
     <div>
@@ -70,6 +96,17 @@ export default function AdminCategories() {
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Edit Category" : "Add Category"}>
         <form onSubmit={handleSave} className="space-y-4">
           <Input id="name" name="name" label="Category Name" defaultValue={editing?.name} required />
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-ink-700">Category Image</label>
+            <input
+              type="file"
+              name="image"
+              accept="image/*"
+              className="w-full rounded-sm border border-dashed border-line py-3 text-sm text-ink-500 file:mr-3 file:rounded-sm file:border-0 file:bg-stone-200 file:px-3 file:py-1.5"
+            />
+          </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
               Cancel
@@ -80,6 +117,7 @@ export default function AdminCategories() {
           </div>
         </form>
       </Dialog>
+
 
       <ConfirmDialog
         open={!!deleting}

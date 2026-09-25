@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, PackageX } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import SearchBar from "../../components/SearchBar";
@@ -8,12 +8,14 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import Input from "../../components/Input";
 import EmptyState from "../../components/EmptyState";
 import { TableRowSkeleton } from "../../components/LoadingSkeleton";
-import { products as initialProducts, categories } from "../../data/mockData";
+// import { products as initialProducts, categories } from "../../data/mockData";
 import { formatPrice } from "../../lib/utils";
 import { useToast } from "../../components/Toast";
+import api from "../../lib/api";
 
 export default function AdminProducts() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -27,30 +29,42 @@ export default function AdminProducts() {
     setFormOpen(true);
   }
 
+  function loadProduct() {
+    api.get("/products").then((res) => setProducts(res.data));
+  }
+
+  useEffect(() => {
+    loadProduct();
+    api.get("/categories").then((res) => setCategories(res.data));
+  })
+
   function openEdit(product) {
     setEditing(product);
     setFormOpen(true);
   }
 
-  function handleSave(e) {
-    e.preventDefault();
-    const form = new FormData(e.target);
-    const data = {
-      name: form.get("name"),
-      category: form.get("category"),
-      price: Number(form.get("price")),
-      stock: Number(form.get("stock")),
-      description: form.get("description"),
-    };
-    if (editing) {
-      setProducts((prev) => prev.map((p) => (p.id === editing.id ? { ...p, ...data } : p)));
-      showToast("Product updated");
-    } else {
-      setProducts((prev) => [{ id: `p${Date.now()}`, image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80", images: [], rating: 0, reviews: 0, originalPrice: null, ...data }, ...prev]);
-      showToast("Product added");
+  async function handleSave(e) {
+    e.preventDefault(); const formData = new FormData(e.target);
+    try {
+      if (editing) {
+        formData.append("_method", "PUT");
+        await api.post(`/products/${editing.id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        showToast("Product updated");
+      } else {
+        await api.post("/products", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        showToast("Product added");
+      }
+      loadProducts();
+      setFormOpen(false);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Something went wrong.");
     }
-    setFormOpen(false);
   }
+
 
   function handleDelete() {
     setProducts((prev) => prev.filter((p) => p.id !== deleting.id));
@@ -123,9 +137,9 @@ export default function AdminProducts() {
           <Input id="name" name="name" label="Product Name" defaultValue={editing?.name} required />
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink-700">Category</label>
-            <select name="category" defaultValue={editing?.category || categories[0].name} className="h-11 w-full rounded-sm border border-line bg-stone-50 px-3.5 text-sm focus:border-brass-500 focus:outline-none focus:ring-1 focus:ring-brass-500">
+            <select name="category_id" defaultValue={editing?.category_id} className="h-11 w-full rounded-sm border border-line bg-stone-50 px-3.5 text-sm focus:border-brass-500 focus:outline-none focus:ring-1 focus:ring-brass-500">
               {categories.map((c) => (
-                <option key={c.id} value={c.name}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -144,9 +158,13 @@ export default function AdminProducts() {
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink-700">Product Image</label>
-            <button type="button" className="w-full rounded-sm border border-dashed border-line py-3 text-sm text-ink-500 hover:border-brass-500">
-              Upload Image
-            </button>
+            <input
+              type="file"
+              name="image"
+              accept="image/*"
+              className="w-full rounded-sm border border-dashed border-line py-3 text-sm text-ink-500 file:mr-3 file:rounded-sm file:border-0 file:bg-stone-200 file:px-3 file:py-1.5"
+            />
+
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>

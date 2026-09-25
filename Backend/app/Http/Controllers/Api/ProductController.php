@@ -33,14 +33,24 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
             'stock' => 'required|integer|min:0',
+            'image' => 'nullable|image|max:4096',
         ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $validated['image'] = '/storage/' . $path;
+        }
+
         $product = Product::create($validated);
+
         return response()->json($product, 201);
     }
+
     
-    public function update(Request $request, $id)
+   public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -48,10 +58,19 @@ class ProductController extends Controller
             'price' => 'sometimes|numeric|min:0',
             'original_price' => 'nullable|numeric|min:0',
             'stock' => 'sometimes|integer|min:0',
+            'image' => 'nullable|image|max:4096',
         ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $validated['image'] = '/storage/' . $path;
+        }
+
         $product->update($validated);
+
         return response()->json($product);
     }
+
     public function destroy($id)
     {
         Product::findOrFail($id)->delete();

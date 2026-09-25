@@ -7,7 +7,7 @@ import ProductGrid from "../components/ProductGrid";
 import Button from "../components/Button";
 // import { products, categories } from "../data/mockData";
 import api from "../lib/api";
-import { categories } from "../data/mockData";
+// import { categories } from "../data/mockData";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../components/Toast";
 
@@ -25,6 +25,7 @@ export default function Products() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   // useEffect(() => {
   //   const t = setTimeout(() => setLoading(false), 500);
@@ -41,6 +42,11 @@ export default function Products() {
       .catch((err) => console.error("Failed to load products:", err))
       .finally(() => setLoading(false));
   }, []);
+  
+
+  useEffect(() => {
+    api.get('/categories').then((res) => setCategories(res.data));
+  }, []);
 
 
   useEffect(() => {
@@ -50,7 +56,7 @@ export default function Products() {
   const filtered = useMemo(() => {
     let list = [...products];
     if (category !== "all") {
-      list = list.filter((p) => p.category.toLowerCase() === category);
+      list = list.filter((p) => p.category_id === category);
     }
     if (query) {
       list = list.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
@@ -63,7 +69,7 @@ export default function Products() {
     if (sortBy === "price-desc") list.sort((a, b) => b.price - a.price);
     if (sortBy === "rating") list.sort((a, b) => b.rating - a.rating);
     return list;
-  }, [query, category, priceRange, sortBy]);
+  }, [products, query, category, priceRange, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
