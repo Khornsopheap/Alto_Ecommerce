@@ -6,6 +6,7 @@ import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
 import { formatPrice } from "../lib/utils";
 import { useCart } from "../context/CartContext";
+import { resolveImage } from "../lib/api";
 
 const SHIPPING = 10;
 
@@ -54,7 +55,7 @@ export default function Cart() {
                   <tr key={item.id} className="border-b border-line last:border-0">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <img src={item.image} alt={item.name} className="h-14 w-14 rounded-sm object-cover" />
+                        <img src={resolveImage(item.image)} alt={item.name} className="h-14 w-14 rounded-sm object-cover" />
                         <span className="font-medium text-ink">{item.name}</span>
                       </div>
                     </td>
@@ -78,7 +79,7 @@ export default function Cart() {
           <div className="space-y-3 sm:hidden">
             {items.map((item) => (
               <div key={item.id} className="flex gap-3 rounded-sm border border-line p-3">
-                <img src={item.image} alt={item.name} className="h-16 w-16 rounded-sm object-cover" />
+                <img src={resolveImage(item.image)} alt={item.name} className="h-16 w-16 rounded-sm object-cover" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <p className="text-sm font-medium text-ink">{item.name}</p>

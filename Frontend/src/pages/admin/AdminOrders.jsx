@@ -1,23 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageHeader from "../../components/PageHeader";
 import SearchBar from "../../components/SearchBar";
 import StatusBadge from "../../components/StatusBadge";
 import Dialog from "../../components/Dialog";
-import { orders } from "../../data/mockData";
+import Button from "../../components/Button";
+import api from "../../lib/api";
 import { formatPrice } from "../../lib/utils";
+import { useToast } from "../../components/Toast";
 
 const statuses = ["All", "Pending", "Completed", "Cancelled"];
 
 export default function AdminOrders() {
+  const [orders, setOrders] = useState([]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
   const [viewing, setViewing] = useState(null);
+  const { showToast } = useToast();
+
+  function loadOrders() {
+    api.get("/admin/orders").then((res) => setOrders(res.data));
+  }
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
   const filtered = orders.filter((o) => {
-    const matchesQuery = o.customer.toLowerCase().includes(query.toLowerCase()) || o.id.includes(query);
+    const matchesQuery =
+      o.shipping_address?.full_name?.toLowerCase().includes(query.toLowerCase()) ||
+      o.id.includes(query);
     const matchesStatus = status === "All" || o.status === status;
     return matchesQuery && matchesStatus;
   });
+
+  async function handleStatusChange(newStatus) {
+    try {
+      await api.put(`/admin/orders/${viewing.id}`, { status: newStatus });
+      showToast("Order status updated");
+      loadOrders();
+      setViewing((v) => ({ ...v, status: newStatus }));
+    } catch (err) {
+      showToast("Failed to update status.");
+    }
+  }
 
   return (
     <div>
@@ -52,8 +77,8 @@ export default function AdminOrders() {
           <tbody>
             {filtered.map((o) => (
               <tr key={o.id} className="border-b border-line last:border-0">
-                <td className="price px-4 py-3 font-medium text-ink">{o.id}</td>
-                <td className="px-4 py-3 text-ink-500">{o.customer}</td>
+                <td className="price px-4 py-3 font-medium text-ink">{o.id.slice(-6).toUpperCase()}</td>
+                <td className="px-4 py-3 text-ink-500">{o.shipping_address?.full_name}</td>
                 <td className="price px-4 py-3 text-ink">{formatPrice(o.total)}</td>
                 <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
                 <td className="px-4 py-3">
@@ -67,14 +92,33 @@ export default function AdminOrders() {
         </table>
       </div>
 
-      <Dialog open={!!viewing} onClose={() => setViewing(null)} title={`Order ${viewing?.id}`}>
+      <Dialog open={!!viewing} onClose={() => setViewing(null)} title={`Order ${viewing?.id?.slice(-6).toUpperCase()}`}>
         {viewing && (
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between"><span className="text-ink-500">Customer</span><span className="font-medium text-ink">{viewing.customer}</span></div>
-            <div className="flex justify-between"><span className="text-ink-500">Date</span><span className="text-ink">{viewing.date}</span></div>
-            <div className="flex justify-between"><span className="text-ink-500">Items</span><span className="text-ink">{viewing.items}</span></div>
-            <div className="flex justify-between"><span className="text-ink-500">Status</span><StatusBadge status={viewing.status} /></div>
-            <div className="flex justify-between border-t border-line pt-3 text-base font-semibold"><span>Total</span><span className="price">{formatPrice(viewing.total)}</span></div>
+          <div className="space-y-4 text-sm">
+            <div className="space-y-2">
+              {viewing.items.map((item, i) => (
+                <div key={i} className="flex justify-between">
+                  <span className="text-ink-500">{item.name} × {item.qty}</span>
+                  <span className="price">{formatPrice(item.price * item.qty)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between border-t border-line pt-3 text-base font-semibold">
+              <span>Total</span>
+              <span className="price">{formatPrice(viewing.total)}</span>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-ink-700">Status</label>
+              <select
+                value={viewing.status}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                className="h-11 w-full rounded-sm border border-line bg-stone-50 px-3.5 text-sm focus:border-brass-500 focus:outline-none"
+              >
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
           </div>
         )}
       </Dialog>

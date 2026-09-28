@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Rating from "./Rating";
 import { formatPrice, cn } from "../lib/utils";
+import { resolveImage } from "../lib/api";
 
 export default function ProductCard({ product, onAddToCart, onToggleWishlist, wished = false }) {
   const discount = product.originalPrice
@@ -16,9 +17,7 @@ export default function ProductCard({ product, onAddToCart, onToggleWishlist, wi
       className="group relative flex flex-col overflow-hidden rounded-sm border border-line bg-stone-50 transition-shadow hover:shadow-card"
     >
       <Link to={`/products/${product.id}`} className="relative block aspect-square overflow-hidden bg-stone-200">
-        <img
-          src={product.image}
-          alt={product.name}
+        <img src={resolveImage(product.image)} alt={product.name}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
         />

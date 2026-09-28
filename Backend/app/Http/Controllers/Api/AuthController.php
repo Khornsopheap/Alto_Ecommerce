@@ -29,6 +29,7 @@ class AuthController extends Controller
             'token' => $user->createToken('api-token')->plainTextToken,
         ], 201);
     }
+    
     public function login(Request $request)
     {
         $credentials = $request->validate([

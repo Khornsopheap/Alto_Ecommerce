@@ -5,9 +5,7 @@ import PageHeader from "../components/PageHeader";
 import SearchBar from "../components/SearchBar";
 import ProductGrid from "../components/ProductGrid";
 import Button from "../components/Button";
-// import { products, categories } from "../data/mockData";
-import api, { resolveImage } from "../lib/api";
-// import { categories } from "../data/mockData";
+import api from "../lib/api";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../components/Toast";
 
@@ -27,26 +25,25 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
 
-  // useEffect(() => {
-  //   const t = setTimeout(() => setLoading(false), 500);
-  //   return () => clearTimeout(t);
-  // }, []);
-
-  // useEffect(() => {
-  //   setLoading(true);
-  //   api
-  //     .get("/products")
-  //     .then((res) => {
-  //       setProducts(res.data);
-  //     })
-  //     .catch((err) => console.error("Failed to load products:", err))
-  //     .finally(() => setLoading(false));
-  // }, []);
-
 
   useEffect(() => {
-    api.get("/products").then((res) => setProducts(res.data));
-    api.get("/categories").then((res) => setCategories(res.data));
+    async function loadData() {
+      try {
+        const [productsRes, categoriesRes] = await Promise.all([
+          api.get("/products"),
+          api.get("/categories"),
+        ]);
+
+        setProducts(productsRes.data);
+        setCategories(categoriesRes.data);
+      } catch (err) {
+        console.error("Failed to load products/categories:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
   }, []);
 
 
