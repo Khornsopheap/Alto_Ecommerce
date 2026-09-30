@@ -57,7 +57,9 @@ export default function Orders() {
                     <td className="price px-4 py-4 font-medium text-ink">{formatPrice(o.total)}</td>
                     <td className="px-4 py-4">
                       <StatusBadge status={o.status} />
+                      <StatusBadge status={o.payment_status} className="ml-2" />
                     </td>
+
                   </tr>
                 ))}
               </tbody>

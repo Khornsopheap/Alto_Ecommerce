@@ -80,7 +80,11 @@ export default function AdminOrders() {
                 <td className="price px-4 py-3 font-medium text-ink">{o.id.slice(-6).toUpperCase()}</td>
                 <td className="px-4 py-3 text-ink-500">{o.shipping_address?.full_name}</td>
                 <td className="price px-4 py-3 text-ink">{formatPrice(o.total)}</td>
-                <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
+                <td className="px-4 py-4">
+                  <StatusBadge status={o.status} />
+                  <StatusBadge status={o.payment_status} className="ml-2" />
+                </td>
+
                 <td className="px-4 py-3">
                   <button onClick={() => setViewing(o)} className="text-sm font-medium text-brass-600 hover:text-brass-700">
                     View

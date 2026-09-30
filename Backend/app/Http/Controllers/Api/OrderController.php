@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use KHQR\BakongKHQR;
+use KHQR\Helpers\KHQRData;
+use KHQR\Models\IndividualInfo;
 
 class OrderController extends Controller
 {
@@ -38,6 +41,7 @@ class OrderController extends Controller
             'shipping_address.address' => 'required|string',
             'shipping_address.city' => 'required|string',
             'shipping_address.country' => 'required|string',
+            'payment_method' => 'required|in:cod,khqr',
         ]);
 
         $shipping = 10.0;
@@ -63,6 +67,8 @@ class OrderController extends Controller
             'shipping' => $shipping,
             'total' => $subtotal + $shipping,
             'status' => 'Pending',
+            'payment_method' => $validated['payment_method'],
+            'payment_status' => 'Unpaid',
             'shipping_address' => $validated['shipping_address'],
         ]);
 
@@ -83,6 +89,48 @@ class OrderController extends Controller
 
         $order = Order::findOrFail($id);
         $order->update($validated);
+
+        return response()->json($order);
+    }
+
+    public function generateKhqr(Request $request, $id)
+    {
+        $order = Order::where('user_id', (string) $request->user()->id)->findOrFail($id);
+        $info = new IndividualInfo(
+            bakongAccountID: config('services.bakong.account_id'),
+            merchantName: config('services.bakong.merchant_name'),
+            merchantCity: config('services.bakong.merchant_city'),
+            currency: KHQRData::CURRENCY_USD,
+            amount: $order->total,
+            billNumber: (string) $order->id,
+            expirationTimestamp: (string) floor(now()->addMinutes(15)->timestamp * 1000),
+        );
+
+        $result = BakongKHQR::generateIndividual($info);
+
+        // Check if KHQR generation failed
+        if ($result->status['code'] !== 0) {
+            return response()->json([
+                'message' => 'Failed to generate KHQR',
+                'errorCode' => $result->status['errorCode'],
+                'error' => $result->status['message'],
+            ], 422);
+        }
+
+        // The response data is stored directly in $result->data
+        $data = $result->data;
+
+        return response()->json([
+            'qr' => $data['qr'],
+            'md5' => $data['md5'],
+        ]);
+    }
+
+
+    public function confirmPayment(Request $request, $id)
+    {
+        $order = Order::where('user_id', (string) $request->user()->id)->findOrFail($id);
+        $order->update(['payment_status' => 'Paid']);
 
         return response()->json($order);
     }

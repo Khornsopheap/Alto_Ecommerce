@@ -7,15 +7,19 @@ import { formatPrice, cn } from "../lib/utils";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../components/Toast";
 import api from "../lib/api";
+import { QRCodeSVG } from "qrcode.react";
 
 const SHIPPING = 10;
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
-  const [payment, setPayment] = useState("cod");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [payment, setPayment] = useState("cod");
+  const [khqrData, setKhqrData] = useState(null); // { qr, orderId }
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+
 
   const total = subtotal + SHIPPING;
 
@@ -24,25 +28,48 @@ export default function Checkout() {
     setSubmitting(true);
     const form = new FormData(e.target);
 
+    const payload = {
+      items: items.map((i) => ({ product_id: i.id, qty: i.qty })),
+      shipping_address: {
+        full_name: form.get("fullName"),
+        email: form.get("email"),
+        phone: form.get("phone"),
+        address: form.get("address"),
+        city: form.get("city"),
+        country: form.get("country"),
+      },
+      payment_method: payment,
+    };
+
     try {
-      await api.post("/orders", {
-        items: items.map((i) => ({ product_id: i.id, qty: i.qty })),
-        shipping_address: {
-          full_name: form.get("fullName"),
-          email: form.get("email"),
-          phone: form.get("phone"),
-          address: form.get("address"),
-          city: form.get("city"),
-          country: form.get("country"),
-        },
-      });
-      clearCart();
-      showToast("Order placed successfully");
-      navigate("/orders");
+      const res = await api.post("/orders", payload);
+
+      if (payment === "khqr") {
+        const qrRes = await api.get(`/orders/${res.data.id}/khqr`);
+        setKhqrData({ qr: qrRes.data.qr, orderId: res.data.id });
+      } else {
+        clearCart();
+        showToast("Order placed successfully");
+        navigate("/orders");
+      }
     } catch (err) {
       showToast(err.response?.data?.message || "Checkout failed. Please try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleConfirmPayment() {
+    setConfirmingPayment(true);
+    try {
+      await api.put(`/orders/${khqrData.orderId}/confirm-payment`);
+      clearCart();
+      showToast("Payment confirmed");
+      navigate("/orders");
+    } catch (err) {
+      showToast("Failed to confirm payment.");
+    } finally {
+      setConfirmingPayment(false);
     }
   }
 
@@ -72,20 +99,54 @@ export default function Checkout() {
 
           <section>
             <h2 className="mb-4 font-display text-lg font-medium text-ink">Payment</h2>
-            <label
-              className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-sm border p-4 text-sm font-medium",
-                payment === "cod" ? "border-brass-500 bg-brass-50" : "border-line"
-              )}
-            >
-              <input type="radio" name="payment" checked={payment === "cod"} onChange={() => setPayment("cod")} className="accent-brass-500" />
-              Cash on Delivery
-            </label>
+            <div className="space-y-2">
+              <label
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-sm border p-4 text-sm font-medium",
+                  payment === "cod" ? "border-brass-500 bg-brass-50" : "border-line"
+                )}
+              >
+                <input type="radio" name="payment" checked={payment === "cod"} onChange={() => setPayment("cod")} className="accent-brass-500" />
+                Cash on Delivery
+              </label>
+              <label
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-sm border p-4 text-sm font-medium",
+                  payment === "khqr" ? "border-brass-500 bg-brass-50" : "border-line"
+                )}
+              >
+                <input type="radio" name="payment" checked={payment === "khqr"} onChange={() => setPayment("khqr")} className="accent-brass-500" />
+                KHQR (Bakong)
+              </label>
+            </div>
           </section>
+
+
         </div>
 
         <div className="h-fit rounded-sm border border-line bg-stone-100 p-6">
           <h2 className="font-display text-lg font-medium text-ink">Order Summary</h2>
+          {khqrData ? (
+            <div className="mt-6 flex flex-col items-center gap-4 rounded-sm border border-line bg-stone-50 p-6">
+              <p className="text-sm font-medium text-ink">Scan with any banking app</p>
+              <QRCodeSVG value={khqrData.qr} size={200} />
+              <Button
+                type="button"
+                variant="accent"
+                size="lg"
+                className="w-full"
+                onClick={handleConfirmPayment}
+                disabled={confirmingPayment}
+              >
+                {confirmingPayment ? "Confirming..." : "I've Paid"}
+              </Button>
+            </div>
+          ) : (
+            <Button type="submit" variant="accent" size="lg" className="mt-6 w-full" disabled={submitting || items.length === 0}>
+              {submitting ? "Placing Order..." : "Place Order"}
+            </Button>
+          )}
+
           <div className="mt-4 space-y-2 text-sm">
             {items.map((item) => (
               <div key={item.id} className="flex justify-between text-ink-500">

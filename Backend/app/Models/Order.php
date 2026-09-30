@@ -10,7 +10,7 @@ class Order extends Model
     protected $collection = 'orders';
 
     protected $fillable = [
-        'user_id', 'items', 'subtotal', 'shipping', 'total', 'status', 'shipping_address',
+        'user_id', 'items', 'subtotal', 'shipping', 'total', 'status', 'shipping_address','payment_method', 'payment_status'
     ];
 
     protected function casts(): array
