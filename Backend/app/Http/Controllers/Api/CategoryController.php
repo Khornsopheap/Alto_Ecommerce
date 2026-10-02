@@ -4,14 +4,22 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
     public function index()
     {
-        return response()->json(Category::all());
+        $categories = Category::all();
+
+        $categories->each(function ($category) {
+            $category->product_count = Product::where('category_id', (string) $category->id)->count();
+        });
+
+        return response()->json($categories);
     }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

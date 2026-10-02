@@ -9,7 +9,7 @@ import ConfirmDialog from "./ConfirmDialog";
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/products", label: "Products" },
-  { to: "/products?category=electronics", label: "Categories" },
+  { to: "/categories", label: "Categories" },
 ];
 
 export default function Navbar() {
@@ -46,13 +46,13 @@ export default function Navbar() {
               <NavLink
                 key={link.label}
                 to={link.to}
+                end
                 className={({ isActive }) =>
                   cn(
                     "relative rounded-sm px-3 py-2 text-sm font-medium text-ink-500 transition-colors hover:text-ink",
                     isActive && "text-ink after:absolute after:-bottom-[1px] after:left-3 after:right-3 after:h-[2px] after:bg-brass-500"
                   )
                 }
-                end={link.to === "/"}
               >
                 {link.label}
               </NavLink>

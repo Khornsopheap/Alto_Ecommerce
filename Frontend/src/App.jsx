@@ -15,6 +15,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
+import Categories from "./pages/categories";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/orders" element={<Orders />} />
+        <Route path="/categories" element={<Categories />} />
       </Route>
 
       <Route path="/admin" element={<AdminLayout />}>
