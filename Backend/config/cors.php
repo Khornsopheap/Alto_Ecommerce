@@ -4,7 +4,7 @@ return [
 
     'paths' => ['*'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['http://localhost:5173', 'https://your-frontend-name.onrender.com' ],
+    'allowed_origins' => ['http://localhost:5173', 'https://alto-frontend.onrender.com' ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
