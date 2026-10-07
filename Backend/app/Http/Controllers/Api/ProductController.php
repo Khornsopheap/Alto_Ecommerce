@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use Cloudinary\Api\Upload\UploadApi;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -43,9 +44,16 @@ class ProductController extends Controller
         }
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $validated['image'] = '/storage/' . $path;
+            $uploadedFile = (new UploadApi())->upload(
+                $request->file('image')->getRealPath(),
+                [
+                    'folder' => 'products',
+                ]
+            );
+
+            $validated['image'] = $uploadedFile['secure_url'];
         }
+
 
         $product = Product::create($validated);
 
@@ -68,9 +76,16 @@ class ProductController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
-            $validated['image'] = '/storage/' . $path;
+            $uploadedFile = (new UploadApi())->upload(
+                $request->file('image')->getRealPath(),
+                [
+                    'folder' => 'products',
+                ]
+            );
+
+            $validated['image'] = $uploadedFile['secure_url'];
         }
+
 
         $product->update($validated);
 

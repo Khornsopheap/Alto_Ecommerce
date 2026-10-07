@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use Cloudinary\Api\Upload\UploadApi;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -27,12 +28,20 @@ class CategoryController extends Controller
             'image' => 'nullable|image|max:4096',
         ]);
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('categories', 'public');
-            $validated['image'] = '/storage/' . $path;
+            $uploadedFile = (new UploadApi())->upload(
+                $request->file('image')->getRealPath(),
+                [
+                    'folder' => 'categories',
+                ]
+            );
+
+            $validated['image'] = $uploadedFile['secure_url'];
         }
+
         $category = Category::create($validated);
         return response()->json($category, 201);
     }
+
     public function update(Request $request, $id)
     {
         $category = Category::findOrFail($id);
@@ -41,9 +50,16 @@ class CategoryController extends Controller
             'image' => 'nullable|image|max:4096',
         ]);
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('categories', 'public');
-            $validated['image'] = '/storage/' . $path;
+            $uploadedFile = (new UploadApi())->upload(
+                $request->file('image')->getRealPath(),
+                [
+                    'folder' => 'categories',
+                ]
+            );
+
+            $validated['image'] = $uploadedFile['secure_url'];
         }
+
         $category->update($validated);
         return response()->json($category);
     }
